@@ -8,6 +8,7 @@ let confirmModalResolver = null;
 let filtroPropietarioTexto = '';
 let filtroPropietarioTorre = '';
 let filtroPropietarioPiso = '';
+let filtroPropietarioTimer = null;
 
 class PilaFiltros {
     constructor() {
@@ -25,66 +26,6 @@ class PilaFiltros {
 }
 
 const pilaFiltrosEstructura = new PilaFiltros();
-
-class NodoPropietarioBST {
-    constructor(key, value) {
-        this.key = key;
-        this.value = value;
-        this.left = null;
-        this.right = null;
-    }
-}
-
-class ArbolPropietariosBST {
-    constructor() {
-        this.root = null;
-    }
-
-    insertar(key, value) {
-        const nuevo = new NodoPropietarioBST(key, value);
-        if (!this.root) {
-            this.root = nuevo;
-            return;
-        }
-        let curr = this.root;
-        while (true) {
-            if (key < curr.key) {
-                if (!curr.left) {
-                    curr.left = nuevo;
-                    return;
-                }
-                curr = curr.left;
-            } else {
-                if (!curr.right) {
-                    curr.right = nuevo;
-                    return;
-                }
-                curr = curr.right;
-            }
-        }
-    }
-
-    buscar(key) {
-        let curr = this.root;
-        while (curr) {
-            if (key === curr.key) return curr.value;
-            curr = key < curr.key ? curr.left : curr.right;
-        }
-        return null;
-    }
-
-    inorden() {
-        const out = [];
-        const walk = (node) => {
-            if (!node) return;
-            walk(node.left);
-            out.push(node.value);
-            walk(node.right);
-        };
-        walk(this.root);
-        return out;
-    }
-}
 
 function toNumber(value) {
     if (typeof value === 'number') return value;
@@ -215,42 +156,16 @@ async function cargarPropietarios() {
         return;
     }
     propietarios = data.items || [];
-    listarPropietarios();
+    if (filtroPropietarioTexto || filtroPropietarioTorre || filtroPropietarioPiso) {
+        await buscarPropietariosBackend();
+    } else {
+        listarPropietarios();
+    }
 }
 
-function listarPropietarios() {
+function listarPropietarios(items = propietarios) {
     const tbody = document.getElementById('tablaPropietarios');
-    const arbol = new ArbolPropietariosBST();
-    propietarios.forEach((prop) => {
-        const dniKey = parseInt(prop.dni, 10);
-        arbol.insertar(Number.isNaN(dniKey) ? 0 : dniKey, prop);
-    });
-
-    // Si el filtro es un DNI exacto, usa búsqueda O(log n) en BST.
-    let base = [];
-    if (/^\d{8}$/.test(filtroPropietarioTexto)) {
-        const encontrado = arbol.buscar(parseInt(filtroPropietarioTexto, 10));
-        base = encontrado ? [encontrado] : [];
-    } else {
-        // Para búsqueda general, recorre BST en orden por DNI.
-        base = arbol.inorden();
-    }
-
-    const filtrados = base.filter((prop) => {
-        const textoBase = [
-            prop.nombre || '',
-            prop.apellido || '',
-            prop.dni || '',
-            prop.nro_departamento || ''
-        ].join(' ').toLowerCase();
-        const textoOk = !filtroPropietarioTexto || textoBase.includes(filtroPropietarioTexto);
-        const torreOk = !filtroPropietarioTorre || (prop.torre || '') === filtroPropietarioTorre;
-        const pisoActual = obtenerPisoDesdeDepartamento(prop.nro_departamento);
-        const pisoOk = !filtroPropietarioPiso || pisoActual === filtroPropietarioPiso;
-        return textoOk && torreOk && pisoOk;
-    });
-
-    if (filtrados.length === 0) {
+    if (items.length === 0) {
         const mensaje = propietarios.length === 0
             ? 'No hay propietarios registrados'
             : 'No hay coincidencias con el filtro';
@@ -259,7 +174,7 @@ function listarPropietarios() {
     }
 
     tbody.innerHTML = '';
-    filtrados.forEach(prop => {
+    items.forEach(prop => {
         const tr = document.createElement('tr');
         tr.innerHTML = `
             <td>${prop.id}</td>
@@ -279,29 +194,38 @@ function listarPropietarios() {
     });
 }
 
-function obtenerPisoDesdeDepartamento(nroDepartamento) {
-    const match = String(nroDepartamento || '').match(/\d+/);
-    if (!match) return '';
-    const digits = match[0];
-    if (digits.length <= 2) {
-        return String(parseInt(digits, 10));
+async function buscarPropietariosBackend() {
+    const params = new URLSearchParams();
+    if (filtroPropietarioTexto) params.set('q', filtroPropietarioTexto);
+    if (filtroPropietarioTorre) params.set('torre', filtroPropietarioTorre);
+    if (filtroPropietarioPiso) params.set('piso', filtroPropietarioPiso);
+
+    const query = params.toString();
+    const { response, data } = await apiFetch(`/propietarios/busqueda${query ? `?${query}` : ''}`);
+    if (!response.ok) {
+        console.error(data);
+        listarPropietarios([]);
+        return;
     }
-    const piso = digits.slice(0, -2);
-    const normalizado = String(parseInt(piso, 10));
-    return normalizado === 'NaN' ? '' : normalizado;
+    listarPropietarios(data.items || []);
 }
 
-function setFiltroPropietarios() {
+async function setFiltroPropietarios() {
     const textoInput = document.getElementById('filtroPropietarioTexto');
     const torreInput = document.getElementById('filtroPropietarioTorre');
     const pisoInput = document.getElementById('filtroPropietarioPiso');
     filtroPropietarioTexto = (textoInput?.value || '').trim().toLowerCase();
     filtroPropietarioTorre = (torreInput?.value || '').trim();
     filtroPropietarioPiso = (pisoInput?.value || '').trim();
-    listarPropietarios();
+    if (filtroPropietarioTimer) {
+        clearTimeout(filtroPropietarioTimer);
+    }
+    filtroPropietarioTimer = setTimeout(() => {
+        buscarPropietariosBackend();
+    }, 220);
 }
 
-function limpiarFiltroPropietarios() {
+async function limpiarFiltroPropietarios() {
     const textoInput = document.getElementById('filtroPropietarioTexto');
     const torreInput = document.getElementById('filtroPropietarioTorre');
     const pisoInput = document.getElementById('filtroPropietarioPiso');
@@ -311,7 +235,7 @@ function limpiarFiltroPropietarios() {
     filtroPropietarioTexto = '';
     filtroPropietarioTorre = '';
     filtroPropietarioPiso = '';
-    listarPropietarios();
+    await buscarPropietariosBackend();
 }
 
 function limpiarFormularioPropietario() {

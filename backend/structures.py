@@ -56,6 +56,62 @@ class ListaPropietarios:
         return data
 
 
+class NodoPropietarioBST:
+    def __init__(self, key, data):
+        self.key = key
+        self.data = data
+        self.left = None
+        self.right = None
+
+
+class ArbolPropietariosBST:
+    def __init__(self):
+        self.root = None
+        self.size = 0
+
+    def insertar(self, key, data):
+        nuevo = NodoPropietarioBST(key, data)
+        if not self.root:
+            self.root = nuevo
+            self.size += 1
+            return
+
+        curr = self.root
+        while True:
+            if key < curr.key:
+                if not curr.left:
+                    curr.left = nuevo
+                    self.size += 1
+                    return
+                curr = curr.left
+            else:
+                if not curr.right:
+                    curr.right = nuevo
+                    self.size += 1
+                    return
+                curr = curr.right
+
+    def buscar(self, key):
+        curr = self.root
+        while curr:
+            if key == curr.key:
+                return curr.data
+            curr = curr.left if key < curr.key else curr.right
+        return None
+
+    def _inorden(self, node, out):
+        if not node:
+            return
+        self._inorden(node.left, out)
+        out.append(node.data)
+        self._inorden(node.right, out)
+
+    def inorden(self):
+        out = []
+        self._inorden(self.root, out)
+        return out
+
+
 class MatrizRecibos:
     def __init__(self):
         self.meses = {}

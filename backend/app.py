@@ -11,6 +11,7 @@ from security import verify_password, hash_password
 from structures import (
     ListaPropietarios,
     MatrizRecibos,
+    ArbolPropietariosBST,
     ArbolRecibosBST,
     ArbolRecibosAVL,
     ColaPrioridadMorosos,
@@ -315,6 +316,27 @@ def actualizar_configuracion():
     return jsonify({"monto_administracion": row["monto_administracion"]})
 
 
+def _listar_propietarios_rows():
+    return fetch_all(
+        """
+        SELECT p.id, p.usuario_id, u.usuario, p.nombre, p.apellido, p.dni, p.correo,
+               p.telefono, p.nro_departamento, p.torre
+        FROM propietarios p
+        LEFT JOIN usuarios u ON u.id = p.usuario_id
+        ORDER BY p.id
+        """
+    )
+
+
+def _calcular_piso_departamento(nro_departamento):
+    digits = "".join(ch for ch in str(nro_departamento or "") if ch.isdigit())
+    if not digits:
+        return ""
+    if len(digits) <= 2:
+        return str(int(digits))
+    return str(int(digits[:-2]))
+
+
 @app.get("/api/propietarios")
 def listar_propietarios():
     # Usa ListaPropietarios (lista enlazada) para el recorrido y salida ordenada.
@@ -325,19 +347,61 @@ def listar_propietarios():
     if role_err:
         return jsonify({"error": role_err[0]}), role_err[1]
 
-    rows = fetch_all(
-        """
-        SELECT p.id, p.usuario_id, u.usuario, p.nombre, p.apellido, p.dni, p.correo,
-               p.telefono, p.nro_departamento, p.torre
-        FROM propietarios p
-        LEFT JOIN usuarios u ON u.id = p.usuario_id
-        ORDER BY p.id
-        """
-    )
+    rows = _listar_propietarios_rows()
     lista = ListaPropietarios()
     for row in rows:
         lista.insertar(row)
     return jsonify({"items": lista.to_list(), "total": lista.length})
+
+
+@app.get("/api/propietarios/busqueda")
+def buscar_propietarios():
+    payload, err = _get_payload()
+    if err:
+        return jsonify({"error": err[0]}), err[1]
+    role_err = _require_roles(payload, "Administrador")
+    if role_err:
+        return jsonify({"error": role_err[0]}), role_err[1]
+
+    q = (request.args.get("q") or "").strip().lower()
+    torre = (request.args.get("torre") or "").strip().upper()
+    piso = (request.args.get("piso") or "").strip()
+
+    rows = _listar_propietarios_rows()
+    arbol = ArbolPropietariosBST()
+    for row in rows:
+        try:
+            key = int(str(row.get("dni") or "0"))
+        except ValueError:
+            key = 0
+        arbol.insertar(key, row)
+
+    if q.isdigit() and len(q) == 8:
+        encontrado = arbol.buscar(int(q))
+        base = [encontrado] if encontrado else []
+    else:
+        base = arbol.inorden()
+
+    items = []
+    for row in base:
+        texto_base = " ".join(
+            [
+                str(row.get("usuario") or ""),
+                str(row.get("nombre") or ""),
+                str(row.get("apellido") or ""),
+                str(row.get("dni") or ""),
+                str(row.get("nro_departamento") or ""),
+            ]
+        ).lower()
+        if q and q not in texto_base:
+            continue
+        if torre and str(row.get("torre") or "").upper() != torre:
+            continue
+        if piso and _calcular_piso_departamento(row.get("nro_departamento")) != piso:
+            continue
+        items.append(row)
+
+    return jsonify({"items": items, "total": len(items), "origen": "backend_bst"})
 
 
 @app.post("/api/propietarios")
