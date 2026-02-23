@@ -12,6 +12,7 @@ let filtroPropietarioTimer = null;
 let busquedaEstructuraRealizada = false;
 let filtroGastoMes = '';
 let filtroGastoTipo = '';
+let filtroGastoEstado = '';
 let indiceGastos = null;
 
 class PilaFiltros {
@@ -33,15 +34,31 @@ const pilaFiltrosEstructura = new PilaFiltros();
 
 class IndiceGastos {
     constructor(items = []) {
+        this.all = [];
         this.byMes = new Map();
         this.byTipo = new Map();
         this.byMesTipo = new Map();
         items.forEach((g) => this.add(g));
     }
 
+    _mesDesdeFecha(value) {
+        if (!value) return '';
+        const text = String(value);
+        if (/^\d{4}-\d{2}-\d{2}/.test(text)) {
+            return text.slice(0, 7);
+        }
+        const parsed = new Date(text);
+        if (Number.isNaN(parsed.getTime())) return '';
+        const y = parsed.getUTCFullYear();
+        const m = String(parsed.getUTCMonth() + 1).padStart(2, '0');
+        return `${y}-${m}`;
+    }
+
     add(gasto) {
-        const mes = String(gasto.fecha_registro || '').slice(0, 7);
+        const mes = this._mesDesdeFecha(gasto.fecha_registro);
         const tipo = gasto.tipo || '';
+
+        this.all.push(gasto);
 
         if (!this.byMes.has(mes)) this.byMes.set(mes, []);
         this.byMes.get(mes).push(gasto);
@@ -64,9 +81,7 @@ class IndiceGastos {
         if (tipo) {
             return this.byTipo.get(tipo) || [];
         }
-        const all = [];
-        this.byMes.forEach((arr) => all.push(...arr));
-        return all;
+        return this.all.slice();
     }
 }
 
@@ -558,9 +573,14 @@ if (document.getElementById('formGastoAgua')) {
 
 function listarGastos() {
     const tbody = document.getElementById('tablaGastos');
-    const items = indiceGastos
+    const baseItems = indiceGastos
         ? indiceGastos.query(filtroGastoMes, filtroGastoTipo)
         : gastos;
+    const items = baseItems.filter((gasto) => {
+        if (filtroGastoEstado === 'pagado') return !!gasto.pagado_gasto;
+        if (filtroGastoEstado === 'pendiente') return !gasto.pagado_gasto;
+        return true;
+    });
 
     if (items.length === 0) {
         const mensaje = gastos.length === 0
@@ -593,8 +613,10 @@ function listarGastos() {
             <td>${estado}</td>
             <td>${formatDateRaw(gasto.fecha_registro)}</td>
             <td>
-                <button class="btn btn-success btn-sm" onclick="pagarGasto(${gasto.id}, ${toNumber(gasto.saldo || 0)})">Pagar</button>
-                <button class="btn btn-danger btn-sm" onclick="eliminarGasto(${gasto.id})">Eliminar</button>
+                <div class="gasto-actions">
+                    <button class="btn btn-success btn-sm" onclick="pagarGasto(${gasto.id}, ${toNumber(gasto.saldo || 0)})">Pagar</button>
+                    <button class="btn btn-danger btn-sm" onclick="eliminarGasto(${gasto.id})">Eliminar</button>
+                </div>
             </td>
         `;
         tbody.appendChild(tr);
@@ -615,18 +637,23 @@ function listarGastos() {
 function setFiltroGastos() {
     const mesInput = document.getElementById('filtroGastoMes');
     const tipoInput = document.getElementById('filtroGastoTipo');
+    const estadoInput = document.getElementById('filtroGastoEstado');
     filtroGastoMes = (mesInput?.value || '').trim();
     filtroGastoTipo = (tipoInput?.value || '').trim();
+    filtroGastoEstado = (estadoInput?.value || '').trim();
     listarGastos();
 }
 
 function limpiarFiltroGastos() {
     const mesInput = document.getElementById('filtroGastoMes');
     const tipoInput = document.getElementById('filtroGastoTipo');
+    const estadoInput = document.getElementById('filtroGastoEstado');
     if (mesInput) mesInput.value = '';
     if (tipoInput) tipoInput.value = '';
+    if (estadoInput) estadoInput.value = '';
     filtroGastoMes = '';
     filtroGastoTipo = '';
+    filtroGastoEstado = '';
     listarGastos();
 }
 

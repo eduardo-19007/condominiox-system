@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="Panel de Administrador - CondominioX">
     <title>Panel Administrador - CondominioX</title>
-    <link rel="stylesheet" href="css/styles.css?v=20260304">
+    <link rel="stylesheet" href="css/styles.css?v=20260305">
 </head>
 <body>
     <div class="app-container">
@@ -78,7 +78,7 @@
                         <div class="stat-icon red">💸</div>
                         <div class="stat-info">
                             <span class="stat-value" id="gastosDelMes">S/ 0</span>
-                            <span class="stat-label">Gastos del Mes</span>
+                            <span class="stat-label">Gastos</span>
                         </div>
                     </div>
                     <div class="stat-card">
@@ -276,6 +276,12 @@
                             <option value="mantenimiento">Mantenimiento</option>
                             <option value="luz">Luz</option>
                             <option value="agua">Agua</option>
+                        </select>
+                        <label for="filtroGastoEstado">Estado</label>
+                        <select id="filtroGastoEstado" class="input-inline" onchange="setFiltroGastos()">
+                            <option value="">Todos</option>
+                            <option value="pendiente">Pendientes</option>
+                            <option value="pagado">Pagados</option>
                         </select>
                         <button class="btn btn-secondary" type="button" onclick="limpiarFiltroGastos()">Limpiar</button>
                     </div>
@@ -615,9 +621,9 @@
         </div>
     </div>
 
-    <script src="js/config.js?v=20260304"></script>
-    <script src="js/auth.js?v=20260304"></script>
-    <script src="js/admin.js?v=20260304"></script>
+    <script src="js/config.js?v=20260305"></script>
+    <script src="js/auth.js?v=20260305"></script>
+    <script src="js/admin.js?v=20260305"></script>
     <script>
         // Override mostrarSeccion para el nuevo diseño
         function mostrarSeccion(seccionId, btn) {

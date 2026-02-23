@@ -632,6 +632,8 @@ def listar_gastos():
         total = float(row["monto"] or 0)
         pagado = float(row.get("monto_pagado") or 0)
         saldo = max(total - pagado, 0)
+        if row.get("fecha_registro"):
+            row["fecha_registro"] = row["fecha_registro"].isoformat()
         row["saldo"] = saldo
         row["pagado_gasto"] = saldo <= 0
     return jsonify({"items": rows})

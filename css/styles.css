@@ -1551,6 +1551,16 @@ body {
     justify-content: center;
 }
 
+.gasto-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.gasto-actions .btn {
+    min-width: 86px;
+    justify-content: center;
+}
+
 /* Stats Mini */
 .stats-mini {
     display: flex;
