@@ -63,6 +63,9 @@
                                 <h3 id="infoNombre">Cargando...</h3>
                                 <span id="infoDepartamentoTorre">Depto. - Torre -</span>
                             </div>
+                            <button type="button" class="btn btn-secondary btn-sm" id="btnEditarContacto" title="Editar contacto">
+                                ✏️ Editar
+                            </button>
                         </div>
                         <div class="profile-details">
                             <div class="detail-item">
@@ -72,12 +75,19 @@
                             <div class="detail-item">
                                 <span class="detail-label">Correo</span>
                                 <span class="detail-value" id="infoCorreo">-</span>
+                                <input type="email" id="infoCorreoInput" class="detail-edit-input hidden" disabled>
                             </div>
                             <div class="detail-item">
                                 <span class="detail-label">Teléfono</span>
                                 <span class="detail-value" id="infoTelefono">-</span>
+                                <input type="tel" id="infoTelefonoInput" class="detail-edit-input hidden" disabled>
                             </div>
                         </div>
+                        <div id="accionesEditarContacto" class="detail-edit-actions hidden">
+                            <button type="button" class="btn btn-primary btn-sm" id="btnGuardarContacto">Guardar</button>
+                            <button type="button" class="btn btn-secondary btn-sm" id="btnCancelarContacto">Cancelar</button>
+                        </div>
+                        <div id="mensajeContacto" class="mensaje"></div>
                     </div>
 
                     <div class="stats-mini">
@@ -100,27 +110,6 @@
                     </div>
                 </div>
 
-                <div class="form-card" style="max-width: 640px; margin-top: 1rem;">
-                    <div class="form-card-header">
-                        <h3>Editar Contacto</h3>
-                    </div>
-                    <form id="formEditarContacto" class="panel-form">
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label for="editarCorreo">Correo</label>
-                                <input type="email" id="editarCorreo" placeholder="correo@ejemplo.com">
-                            </div>
-                            <div class="form-group">
-                                <label for="editarTelefono">Teléfono</label>
-                                <input type="tel" id="editarTelefono" placeholder="999999999">
-                            </div>
-                        </div>
-                        <div id="mensajeContacto" class="mensaje"></div>
-                        <div class="form-actions">
-                            <button type="submit" class="btn btn-primary">Guardar Contacto</button>
-                        </div>
-                    </form>
-                </div>
             </section>
 
             <!-- Recibos Pendientes -->

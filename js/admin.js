@@ -82,8 +82,10 @@ function listarPropietarios() {
             <td>${prop.torre}</td>
             <td>${prop.telefono || '-'}</td>
             <td>
-                <button class="btn btn-secondary btn-sm" onclick="editarPropietario(${prop.id})">Editar</button>
-                <button class="btn btn-danger btn-sm" onclick="eliminarPropietario(${prop.id})">Eliminar</button>
+                <div class="propietario-actions">
+                    <button class="btn btn-secondary btn-sm" onclick="editarPropietario(${prop.id})">Editar</button>
+                    <button class="btn btn-danger btn-sm" onclick="eliminarPropietario(${prop.id})">Eliminar</button>
+                </div>
             </td>
         `;
         tbody.appendChild(tr);

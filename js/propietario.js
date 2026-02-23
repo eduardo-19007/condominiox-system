@@ -1,6 +1,7 @@
 let perfil = null;
 let recibosPendientes = [];
 let recibosPagados = [];
+let editandoContacto = false;
 
 function toNumber(value) {
     if (typeof value === 'number') return value;
@@ -31,12 +32,66 @@ async function cargarInformacionPersonal() {
     document.getElementById('infoDNI').textContent = perfil.dni || '-';
     document.getElementById('infoCorreo').textContent = perfil.correo || '-';
     document.getElementById('infoTelefono').textContent = perfil.telefono || '-';
-    const correoInput = document.getElementById('editarCorreo');
-    const telefonoInput = document.getElementById('editarTelefono');
+    const correoInput = document.getElementById('infoCorreoInput');
+    const telefonoInput = document.getElementById('infoTelefonoInput');
     if (correoInput) correoInput.value = perfil.correo || '';
     if (telefonoInput) telefonoInput.value = perfil.telefono || '';
 
     await cargarEstadisticas();
+}
+
+function activarEdicionContacto(activo) {
+    editandoContacto = activo;
+    const correoValor = document.getElementById('infoCorreo');
+    const telefonoValor = document.getElementById('infoTelefono');
+    const correoInput = document.getElementById('infoCorreoInput');
+    const telefonoInput = document.getElementById('infoTelefonoInput');
+    const acciones = document.getElementById('accionesEditarContacto');
+    const btnEditar = document.getElementById('btnEditarContacto');
+
+    if (!correoValor || !telefonoValor || !correoInput || !telefonoInput || !acciones || !btnEditar) {
+        return;
+    }
+
+    correoValor.classList.toggle('hidden', activo);
+    telefonoValor.classList.toggle('hidden', activo);
+    correoInput.classList.toggle('hidden', !activo);
+    telefonoInput.classList.toggle('hidden', !activo);
+    correoInput.disabled = !activo;
+    telefonoInput.disabled = !activo;
+    acciones.classList.toggle('hidden', !activo);
+    btnEditar.classList.toggle('hidden', activo);
+
+    if (activo) {
+        correoInput.value = perfil?.correo || '';
+        telefonoInput.value = perfil?.telefono || '';
+        correoInput.focus();
+    }
+}
+
+async function guardarContacto() {
+    const correoInput = document.getElementById('infoCorreoInput');
+    const telefonoInput = document.getElementById('infoTelefonoInput');
+    if (!correoInput || !telefonoInput) return;
+
+    const correo = correoInput.value.trim();
+    const telefono = telefonoInput.value.trim();
+    const { response, data } = await apiFetch('/mi-perfil', {
+        method: 'PUT',
+        body: JSON.stringify({ correo, telefono })
+    });
+    if (!response.ok) {
+        mostrarMensaje('mensajeContacto', data.error || 'No se pudo actualizar', 'error');
+        return;
+    }
+
+    activarEdicionContacto(false);
+    await cargarInformacionPersonal();
+    mostrarMensaje('mensajeContacto', 'Guardado exitosamente', 'success');
+}
+
+function cancelarEdicionContacto() {
+    activarEdicionContacto(false);
 }
 
 async function cargarEstadisticas() {
@@ -220,24 +275,14 @@ if (document.getElementById('formCambiarContrasena')) {
     });
 }
 
-if (document.getElementById('formEditarContacto')) {
-    document.getElementById('formEditarContacto').addEventListener('submit', async function(e) {
-        e.preventDefault();
-        const correo = document.getElementById('editarCorreo').value.trim();
-        const telefono = document.getElementById('editarTelefono').value.trim();
-
-        const { response, data } = await apiFetch('/mi-perfil', {
-            method: 'PUT',
-            body: JSON.stringify({ correo, telefono })
-        });
-        if (!response.ok) {
-            mostrarMensaje('mensajeContacto', data.error || 'No se pudo actualizar', 'error');
-            return;
-        }
-
-        mostrarMensaje('mensajeContacto', 'Datos actualizados', 'success');
-        await cargarInformacionPersonal();
-    });
+if (document.getElementById('btnEditarContacto')) {
+    document.getElementById('btnEditarContacto').addEventListener('click', () => activarEdicionContacto(true));
+}
+if (document.getElementById('btnGuardarContacto')) {
+    document.getElementById('btnGuardarContacto').addEventListener('click', guardarContacto);
+}
+if (document.getElementById('btnCancelarContacto')) {
+    document.getElementById('btnCancelarContacto').addEventListener('click', cancelarEdicionContacto);
 }
 
 // ========================================

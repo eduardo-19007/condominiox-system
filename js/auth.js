@@ -159,6 +159,12 @@ function mostrarMensaje(elementId, texto, tipo = 'success') {
 function inicializarToggleContrasenas() {
     const botones = document.querySelectorAll('.password-toggle-btn[data-target]');
     botones.forEach(btn => {
+        const iconoAbierto = '<img src="img/eye-open.svg" alt="" aria-hidden="true">';
+        const iconoCerrado = '<img src="img/eye-close.svg" alt="" aria-hidden="true">';
+
+        btn.setAttribute('aria-label', 'Mostrar contraseña');
+        btn.setAttribute('title', 'Mostrar contraseña');
+        btn.innerHTML = iconoAbierto;
         btn.addEventListener('click', function() {
             const targetId = this.getAttribute('data-target');
             const input = document.getElementById(targetId);
@@ -166,7 +172,15 @@ function inicializarToggleContrasenas() {
 
             const mostrando = input.type === 'text';
             input.type = mostrando ? 'password' : 'text';
-            this.textContent = mostrando ? 'Ver' : 'Ocultar';
+            if (mostrando) {
+                this.innerHTML = iconoAbierto;
+                this.setAttribute('aria-label', 'Mostrar contraseña');
+                this.setAttribute('title', 'Mostrar contraseña');
+            } else {
+                this.innerHTML = iconoCerrado;
+                this.setAttribute('aria-label', 'Ocultar contraseña');
+                this.setAttribute('title', 'Ocultar contraseña');
+            }
         });
     });
 }
