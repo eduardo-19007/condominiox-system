@@ -1,70 +1,84 @@
 # CondominioX - Guía de Uso
 
-**Universidad Tecnológica del Perú**  
-**Estudiante:** Laura Isabel Rangel Teran
+Sistema web para gestión de condominio con roles (`Administrador` y `Propietario`), pagos parciales y control de gastos.
 
-Sistema web para la gestión de condominios. Esta guía es **de uso práctico** para administradores y propietarios.
+## Acceso
+1. Abrir `index.html`.
+2. Seleccionar rol.
+3. Ingresar usuario y contraseña.
 
-## Acceso rápido
+## Funciones del Administrador
 
-1. Abre `index.html` en tu navegador.
-2. Elige el rol (Administrador o Propietario).
-3. Ingresa usuario y contraseña.
+### Dashboard
+- Ver indicadores: propietarios, recibos pendientes/pagados y gastos totales.
+- Configurar `monto de administración`.
 
-## Flujo de uso (Administrador)
+### Propietarios
+- Crear propietario (usuario + perfil).
+- Contraseña inicial del propietario: **DNI**.
+- Editar propietario completo (usuario, datos personales y unidad).
+- Eliminar propietario.
+- Filtros de búsqueda por:
+  - texto (`nombre`, `apellido`, `DNI`, `departamento`)
+  - `torre`
+  - `piso`
+- La búsqueda de propietarios se resuelve en backend con **BST**.
 
-### 1) Crear propietarios
-- Ir a **Propietarios** → **Agregar Propietario**.
-- Se crea automáticamente un usuario con **contraseña = DNI**.
-- Puedes **eliminar** propietarios desde la tabla.
+### Gastos
+- Registrar gastos de `mantenimiento`, `luz` y `agua`.
+- Filtrar gastos por:
+  - `mes`
+  - `categoría`
+  - `estado` (`pendiente` / `pagado`)
+- Control de pagos de gastos:
+  - pago manual por botón `Pagar`
+  - estado y saldo por gasto (`monto`, `pagado`, `saldo`)
+- Eliminar gastos.
 
-### 2) Registrar gastos
-- Ir a **Gastos**.
-- Registrar **mantenimiento**, **luz** y **agua** con **fecha manual**.
-- Puedes **eliminar** gastos desde la tabla.
+### Recibos
+- Generar recibos por fecha.
+- Recalcular recibos por mes.
+- Ver recibos `pendientes/pagados` y filtrar por mes.
+- Búsqueda por deuda con **AVL** (inorden fijo), por rango de saldo.
+- Top morosos automático (cola de prioridad).
+- Resumen mensual al final de la sección.
 
-### 3) Configurar monto de administración
-- Ir al **Dashboard** → **Configuración de Administración**.
-- Guardar el nuevo monto.
+## Funciones del Propietario
 
-### 4) Generar recibos
-- En **Recibos** elige la **fecha de generación**.
-- Presiona **Generar Recibos**.
+### Mi información
+- Ver datos personales y unidad.
+- Editar solo `correo` y `teléfono`.
 
-### 5) Recalcular por mes
-- En **Recibos**, selecciona el **mes** y presiona **Recalcular Mes**.
-- Esto actualiza montos y mantiene pagos parciales.
+### Recibos
+- Ver pendientes y pagados.
+- Pagar recibos con pagos parciales.
+- Ver total, pagado y saldo por recibo.
 
-### 6) Ver y filtrar recibos
-- Usa los botones **Pendientes/Pagados**.
-- Usa el **filtro por mes** para ver solo un periodo.
-- El resumen mensual muestra **emitido, pagado y saldo**.
+### Perfil
+- Cambiar contraseña con validación de contraseña actual.
 
-## Flujo de uso (Propietario)
+## Reglas de pago actuales
+- Pago de recibo:
+  - actualiza el recibo (pagado/saldo),
+  - y además aplica el monto a gastos pendientes del mismo mes (FIFO).
+- Pago de gasto manual:
+  - reduce el saldo del gasto seleccionado.
 
-### 1) Ver estado de cuenta
-- **Mi Información** muestra resumen personal.
-- **Pendientes** muestra saldo por recibo.
+## Recuperación de contraseña
+- Flujo por `usuario + DNI + nueva contraseña` en `recuperar.html`.
 
-### 2) Pagar recibos
-- En **Pendientes**, presiona **Pagar**.
-- Ingresa el monto a pagar (pagos parciales habilitados).
+## Estructuras de datos en uso
+- **BST**: búsqueda de propietarios en backend.
+- **AVL**: búsqueda por deuda de recibos.
+- **Cola de prioridad**: ranking de morosos.
+- **Pila**: historial de filtros en búsqueda estructurada.
+- **Índice hash (`Map`)**: filtros rápidos de gastos por mes/tipo.
 
-### 3) Historial de pagos
-- En **Pagados** puedes revisar los montos y fechas.
-
-## Notas importantes
-
-- **Contraseña inicial del propietario = DNI**.
-- Los pagos pueden ser **parciales** y el saldo se actualiza.
-- La fecha de generación define el mes de cálculo.
-
-## Solución rápida a errores comunes
-
-- Si no ves cambios en la web, recarga con `Ctrl + Shift + R`.
-- Si el login no funciona, verifica usuario, rol y contraseña.
+## Recomendaciones de despliegue
+- Frontend: GitHub Pages.
+- Backend: Render + PostgreSQL.
+- Si no ves cambios de frontend, forzar recarga (`Ctrl/Cmd + Shift + R`).
 
 ---
-
-**Versión:** 2.0  
-**Fecha:** Febrero 2026
+**Versión:** 3.0  
+**Fecha:** Marzo 2026
