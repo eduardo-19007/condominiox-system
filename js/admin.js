@@ -5,6 +5,9 @@ let currentRecibosView = 'pendientes';
 let currentMesFilter = '';
 let editingPropietarioId = null;
 let confirmModalResolver = null;
+let filtroPropietarioTexto = '';
+let filtroPropietarioTorre = '';
+let filtroPropietarioPiso = '';
 
 class PilaFiltros {
     constructor() {
@@ -22,6 +25,66 @@ class PilaFiltros {
 }
 
 const pilaFiltrosEstructura = new PilaFiltros();
+
+class NodoPropietarioBST {
+    constructor(key, value) {
+        this.key = key;
+        this.value = value;
+        this.left = null;
+        this.right = null;
+    }
+}
+
+class ArbolPropietariosBST {
+    constructor() {
+        this.root = null;
+    }
+
+    insertar(key, value) {
+        const nuevo = new NodoPropietarioBST(key, value);
+        if (!this.root) {
+            this.root = nuevo;
+            return;
+        }
+        let curr = this.root;
+        while (true) {
+            if (key < curr.key) {
+                if (!curr.left) {
+                    curr.left = nuevo;
+                    return;
+                }
+                curr = curr.left;
+            } else {
+                if (!curr.right) {
+                    curr.right = nuevo;
+                    return;
+                }
+                curr = curr.right;
+            }
+        }
+    }
+
+    buscar(key) {
+        let curr = this.root;
+        while (curr) {
+            if (key === curr.key) return curr.value;
+            curr = key < curr.key ? curr.left : curr.right;
+        }
+        return null;
+    }
+
+    inorden() {
+        const out = [];
+        const walk = (node) => {
+            if (!node) return;
+            walk(node.left);
+            out.push(node.value);
+            walk(node.right);
+        };
+        walk(this.root);
+        return out;
+    }
+}
 
 function toNumber(value) {
     if (typeof value === 'number') return value;
@@ -112,6 +175,12 @@ function obtenerFiltroEstructuraActual() {
     };
 }
 
+function toggleOpcionesTecnicas() {
+    const bloque = document.getElementById('bloqueOpcionesTecnicas');
+    if (!bloque) return;
+    bloque.classList.toggle('hidden');
+}
+
 function aplicarFiltroEstructuraEnUI(filtro) {
     const estructura = document.getElementById('estructuraTipo');
     const recorrido = document.getElementById('estructuraRecorrido');
@@ -151,14 +220,46 @@ async function cargarPropietarios() {
 
 function listarPropietarios() {
     const tbody = document.getElementById('tablaPropietarios');
+    const arbol = new ArbolPropietariosBST();
+    propietarios.forEach((prop) => {
+        const dniKey = parseInt(prop.dni, 10);
+        arbol.insertar(Number.isNaN(dniKey) ? 0 : dniKey, prop);
+    });
 
-    if (propietarios.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="7" class="empty-state">No hay propietarios registrados</td></tr>';
+    // Si el filtro es un DNI exacto, usa búsqueda O(log n) en BST.
+    let base = [];
+    if (/^\d{8}$/.test(filtroPropietarioTexto)) {
+        const encontrado = arbol.buscar(parseInt(filtroPropietarioTexto, 10));
+        base = encontrado ? [encontrado] : [];
+    } else {
+        // Para búsqueda general, recorre BST en orden por DNI.
+        base = arbol.inorden();
+    }
+
+    const filtrados = base.filter((prop) => {
+        const textoBase = [
+            prop.nombre || '',
+            prop.apellido || '',
+            prop.dni || '',
+            prop.nro_departamento || ''
+        ].join(' ').toLowerCase();
+        const textoOk = !filtroPropietarioTexto || textoBase.includes(filtroPropietarioTexto);
+        const torreOk = !filtroPropietarioTorre || (prop.torre || '') === filtroPropietarioTorre;
+        const pisoActual = obtenerPisoDesdeDepartamento(prop.nro_departamento);
+        const pisoOk = !filtroPropietarioPiso || pisoActual === filtroPropietarioPiso;
+        return textoOk && torreOk && pisoOk;
+    });
+
+    if (filtrados.length === 0) {
+        const mensaje = propietarios.length === 0
+            ? 'No hay propietarios registrados'
+            : 'No hay coincidencias con el filtro';
+        tbody.innerHTML = `<tr><td colspan="7" class="empty-state">${mensaje}</td></tr>`;
         return;
     }
 
     tbody.innerHTML = '';
-    propietarios.forEach(prop => {
+    filtrados.forEach(prop => {
         const tr = document.createElement('tr');
         tr.innerHTML = `
             <td>${prop.id}</td>
@@ -176,6 +277,41 @@ function listarPropietarios() {
         `;
         tbody.appendChild(tr);
     });
+}
+
+function obtenerPisoDesdeDepartamento(nroDepartamento) {
+    const match = String(nroDepartamento || '').match(/\d+/);
+    if (!match) return '';
+    const digits = match[0];
+    if (digits.length <= 2) {
+        return String(parseInt(digits, 10));
+    }
+    const piso = digits.slice(0, -2);
+    const normalizado = String(parseInt(piso, 10));
+    return normalizado === 'NaN' ? '' : normalizado;
+}
+
+function setFiltroPropietarios() {
+    const textoInput = document.getElementById('filtroPropietarioTexto');
+    const torreInput = document.getElementById('filtroPropietarioTorre');
+    const pisoInput = document.getElementById('filtroPropietarioPiso');
+    filtroPropietarioTexto = (textoInput?.value || '').trim().toLowerCase();
+    filtroPropietarioTorre = (torreInput?.value || '').trim();
+    filtroPropietarioPiso = (pisoInput?.value || '').trim();
+    listarPropietarios();
+}
+
+function limpiarFiltroPropietarios() {
+    const textoInput = document.getElementById('filtroPropietarioTexto');
+    const torreInput = document.getElementById('filtroPropietarioTorre');
+    const pisoInput = document.getElementById('filtroPropietarioPiso');
+    if (textoInput) textoInput.value = '';
+    if (torreInput) torreInput.value = '';
+    if (pisoInput) pisoInput.value = '';
+    filtroPropietarioTexto = '';
+    filtroPropietarioTorre = '';
+    filtroPropietarioPiso = '';
+    listarPropietarios();
 }
 
 function limpiarFormularioPropietario() {
@@ -723,7 +859,7 @@ async function buscarConEstructura() {
     renderTablaEstructura(data.items || []);
     mostrarMensaje(
         'mensajeEstructuras',
-        `Consulta ${String(data.estructura || '').toUpperCase()} completada (${data.total || 0} resultados)`,
+        `Busqueda completada (${data.total || 0} resultados)`,
         'success'
     );
 }
@@ -746,6 +882,22 @@ async function deshacerFiltroEstructura() {
     const filtro = pilaFiltrosEstructura.pop();
     aplicarFiltroEstructuraEnUI(filtro);
     await cargarRecibos(currentRecibosView);
+    await buscarConEstructura();
+}
+
+function aplicarPresetSaldo(min, max) {
+    const saldoMin = document.getElementById('filtroSaldoMin');
+    const saldoMax = document.getElementById('filtroSaldoMax');
+    if (saldoMin) saldoMin.value = min;
+    if (saldoMax) saldoMax.value = max;
+}
+
+async function limpiarFiltroEstructura() {
+    aplicarPresetSaldo('', '');
+    const estructura = document.getElementById('estructuraTipo');
+    const recorrido = document.getElementById('estructuraRecorrido');
+    if (estructura) estructura.value = 'bst';
+    if (recorrido) recorrido.value = 'inorden';
     await buscarConEstructura();
 }
 

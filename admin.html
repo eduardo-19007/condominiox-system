@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="Panel de Administrador - CondominioX">
     <title>Panel Administrador - CondominioX</title>
-    <link rel="stylesheet" href="css/styles.css?v=20260223">
+    <link rel="stylesheet" href="css/styles.css?v=20260228">
 </head>
 <body>
     <div class="app-container">
@@ -123,6 +123,37 @@
                     <button class="btn btn-secondary" onclick="listarPropietarios()">
                         Actualizar Lista
                     </button>
+                </div>
+
+                <div class="recibos-control-card" style="margin-bottom: 1rem;">
+                    <div class="recibos-search-title">Buscar Propietarios</div>
+                    <div class="recibos-search-hint">Puedes buscar por nombre, apellido, DNI o departamento. Si ingresas DNI exacto, se busca por arbol BST.</div>
+                    <div class="recibos-inline-group">
+                        <label for="filtroPropietarioTexto">Busqueda</label>
+                        <input
+                            type="text"
+                            id="filtroPropietarioTexto"
+                            class="input-inline"
+                            placeholder="Ej. Laura, 12345678, Depto 908"
+                            oninput="setFiltroPropietarios()"
+                        >
+                        <label for="filtroPropietarioTorre">Torre</label>
+                        <select id="filtroPropietarioTorre" class="input-inline" onchange="setFiltroPropietarios()">
+                            <option value="">Todas</option>
+                            <option value="A">Torre A</option>
+                            <option value="B">Torre B</option>
+                        </select>
+                        <label for="filtroPropietarioPiso">Piso</label>
+                        <input
+                            type="number"
+                            id="filtroPropietarioPiso"
+                            class="input-inline"
+                            min="1"
+                            placeholder="Ej. 9"
+                            oninput="setFiltroPropietarios()"
+                        >
+                        <button class="btn btn-secondary" type="button" onclick="limpiarFiltroPropietarios()">Limpiar</button>
+                    </div>
                 </div>
 
                 <!-- Formulario Agregar Propietario -->
@@ -418,18 +449,28 @@
                         <h3>Estructuras de Datos en Pagos</h3>
                     </div>
                     <div class="panel-form">
+                        <p class="estructura-helper">
+                            Usa estos filtros para encontrar recibos por deuda de forma simple.
+                        </p>
                         <div class="recibos-inline-group">
-                            <label for="estructuraTipo">Estructura</label>
+                            <button class="btn btn-secondary btn-sm" type="button" onclick="toggleOpcionesTecnicas()">
+                                Opciones avanzadas (curso)
+                            </button>
+                        </div>
+                        <div id="bloqueOpcionesTecnicas" class="hidden">
+                        <div class="recibos-inline-group">
+                            <label for="estructuraTipo">Motor interno</label>
                             <select id="estructuraTipo" class="input-inline">
-                                <option value="bst">Arbol Binario (BST)</option>
-                                <option value="avl">Arbol AVL</option>
+                                <option value="bst">Motor estandar</option>
+                                <option value="avl">Motor optimizado</option>
                             </select>
-                            <label for="estructuraRecorrido">Recorrido</label>
+                            <label for="estructuraRecorrido">Vista interna</label>
                             <select id="estructuraRecorrido" class="input-inline">
-                                <option value="inorden">Inorden</option>
-                                <option value="preorden">Preorden</option>
-                                <option value="postorden">Postorden</option>
+                                <option value="inorden">Vista A (recomendada)</option>
+                                <option value="preorden">Vista B</option>
+                                <option value="postorden">Vista C</option>
                             </select>
+                        </div>
                         </div>
                         <div class="recibos-inline-group">
                             <label for="filtroSaldoMin">Saldo minimo</label>
@@ -437,14 +478,23 @@
                             <label for="filtroSaldoMax">Saldo maximo</label>
                             <input type="number" id="filtroSaldoMax" class="input-inline" min="0" step="0.01" placeholder="9999.99">
                         </div>
+                        <div class="filtros-rapidos">
+                            <span>Filtros rápidos:</span>
+                            <button class="btn btn-secondary btn-sm" onclick="aplicarPresetSaldo('', '')">Todos</button>
+                            <button class="btn btn-secondary btn-sm" onclick="aplicarPresetSaldo('0.01', '')">Con deuda</button>
+                            <button class="btn btn-secondary btn-sm" onclick="aplicarPresetSaldo('100', '')">Saldo mayor a S/100</button>
+                            <button class="btn btn-secondary btn-sm" onclick="aplicarPresetSaldo('300', '')">Saldo mayor a S/300</button>
+                        </div>
                         <div class="recibos-inline-group">
                             <button class="btn btn-primary" onclick="buscarConEstructura()">Buscar con estructura</button>
                             <button class="btn btn-secondary" onclick="guardarFiltroEstructura()">Guardar filtro (Pila)</button>
                             <button class="btn btn-warning" onclick="deshacerFiltroEstructura()">Deshacer filtro</button>
+                            <button class="btn btn-secondary" onclick="limpiarFiltroEstructura()">Limpiar filtros</button>
                         </div>
                         <div id="mensajeEstructuras" class="mensaje"></div>
                     </div>
                     <div class="data-table-container">
+                        <div class="tabla-caption">Resultados de búsqueda estructurada (BST/AVL)</div>
                         <table class="data-table">
                             <thead>
                                 <tr>
@@ -458,12 +508,13 @@
                             </thead>
                             <tbody id="tablaEstructuraRecibos">
                                 <tr>
-                                    <td colspan="6" class="empty-state">Sin consulta estructurada</td>
+                                    <td colspan="6" class="empty-state">Sin consulta aún. Usa "Buscar con estructura".</td>
                                 </tr>
                             </tbody>
                         </table>
                     </div>
                     <div class="data-table-container">
+                        <div class="tabla-caption">Ranking de prioridad de cobro (cola de prioridad)</div>
                         <table class="data-table">
                             <thead>
                                 <tr>
@@ -566,9 +617,9 @@
         </div>
     </div>
 
-    <script src="js/config.js?v=20260223"></script>
-    <script src="js/auth.js?v=20260223"></script>
-    <script src="js/admin.js?v=20260223"></script>
+    <script src="js/config.js?v=20260228"></script>
+    <script src="js/auth.js?v=20260228"></script>
+    <script src="js/admin.js?v=20260228"></script>
     <script>
         // Override mostrarSeccion para el nuevo diseño
         function mostrarSeccion(seccionId, btn) {
