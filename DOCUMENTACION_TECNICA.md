@@ -33,6 +33,7 @@
 - **Etiquetas de texto:** `index.html` y `admin.html` (`<h1>`, `<h2>`, `<p>`, `<span>`, `<small>`).
 - **Enlaces:** `index.html` (link a `recuperar.html`).
 - **Encabezado/menú/cuerpo:** `admin.html` y `propietario.html` (`<aside class="sidebar">`, `<main class="panel-content">`).
+- **Menú hamburguesa responsive:** `index.html`, `admin.html`, `propietario.html` (botón `.menu-toggle` + `toggleSidebarMenu()`).
 - **Formularios:** `index.html` (login), `admin.html` (propietarios/gastos/config), `propietario.html` (cambiar contraseña).
 - **Tablas:** `admin.html` (propietarios/gastos/recibos/resumen), `propietario.html` (recibos).
 - **Multimedia (imágenes):** `img/logo.png` usado en `index.html`, `admin.html`, `propietario.html`.
@@ -155,6 +156,7 @@ Las variables permiten reutilizar valores en todo el CSS:
 - **Flexbox:** `.sidebar`, `.action-buttons`, `.nav-item`.
 - **Grid:** `.stats-grid`, `.form-row`.
 - **Responsive:** `@media (max-width: 992px)` y `@media (max-width: 576px)` en `css/styles.css`.
+- **Menú hamburguesa:** `.menu-toggle`, `.sidebar.menu-open .sidebar-nav` en `css/styles.css` + función `toggleSidebarMenu()` en `js/auth.js`.
 
 ---
 
@@ -169,6 +171,7 @@ Las variables permiten reutilizar valores en todo el CSS:
         <img src="img/logo.png" alt="Logo" class="logo-img">
         <h1>CONDOMINIOX</h1>
         <p class="tagline">Gestión Inteligente</p>
+        <button class="menu-toggle" type="button" onclick="toggleSidebarMenu()">☰</button>
     </div>
 
     <!-- Navegación/Menú -->
@@ -201,6 +204,11 @@ Las variables permiten reutilizar valores en todo el CSS:
     top: 0;
 }
 ```
+
+**Menú hamburguesa (móvil):**
+- El botón `.menu-toggle` se muestra en resoluciones menores a `992px`.
+- Al hacer click, `toggleSidebarMenu()` agrega/quita `menu-open` en `.sidebar`.
+- Con `.sidebar.menu-open .sidebar-nav { display: flex; }` se despliega el menú.
 
 ### 3.2 Cuerpo (Contenido Principal)
 
@@ -647,7 +655,29 @@ window.addEventListener('DOMContentLoaded', function() {
         flex-direction: column;
     }
 }
+
+/* Menú hamburguesa */
+@media (max-width: 992px) {
+    .menu-toggle { display: inline-flex; }
+    .sidebar-nav { display: none; }
+    .sidebar.menu-open .sidebar-nav { display: flex; }
+}
 ```
+
+### 8.2 Lógica JavaScript del Menú Hamburguesa
+
+```javascript
+function toggleSidebarMenu() {
+    const sidebar = document.querySelector('.sidebar');
+    if (!sidebar) return;
+    sidebar.classList.toggle('menu-open');
+}
+```
+
+- Ubicación: `js/auth.js`.
+- Comportamiento adicional:
+  - se cierra al seleccionar un ítem del menú en móvil,
+  - se cierra al regresar a desktop (`resize > 992px`).
 
 ---
 
